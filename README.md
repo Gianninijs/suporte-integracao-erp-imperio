@@ -1,8 +1,6 @@
-# suporte-integracao-erp-imperio
-# Fluxo de Suporte: Integração E-commerce x ERP Sankhya (Simulação Império Móveis)
-![Diagrama de Arquitetura do Projeto](prints/imagem_06.jpg)
----
 # Monitoramento e Diagnóstico de Integrações E-commerce x ERP (Simulação Império Móveis e Eletro)
+
+![Diagrama de Arquitetura do Projeto](prints/imagem_06.jpg)
 
 Projeto prático de **Suporte de Sistemas e Análise de Dados** desenvolvido para simular a rotina de sustentação de integrações entre o **E-commerce** e o **ERP Sankhya** em uma operação de varejo de móveis e eletrodomésticos com múltiplas lojas no Nordeste.
 
@@ -24,25 +22,47 @@ Em operações de varejo omnichannel, pedidos realizados no e-commerce precisam 
 * [`01_criar_tabela_e_dados.sql`](./01_criar_tabela_e_dados.sql) — Script DDL/DML para criação da tabela `tb_fila_integracoes` e carga de dados simulando cenários reais de sucesso, pendência e erro.
 * [`02_queries_diagnostico.sql`](./02_queries_diagnostico.sql) — Consultas SQL para levantamento de gargalos por tempo, agrupamento de causa-raiz, receita retida, auditoria de campos `JSONB`, visão por loja e simulação de saneamento (`UPDATE`).
 * [`03_guia_atendimento_glpi.md`](./03_guia_atendimento_glpi.md) — Padrão de comunicação técnica traduzida para a linguagem de negócio no atendimento de chamados das lojas.
-* [`prints/`](./prints/) — Evidências das consultas executadas no banco de dados PostgreSQL (Supabase).
+* [`prints/`](./prints/) — Diagrama de arquitetura e evidências das consultas executadas no banco de dados PostgreSQL (Supabase).
 
 ---
 
+## Principais Análises e Evidências (PostgreSQL / Supabase)
 
-### 1. Mapeamento de Causa-Raiz e Receita Retida
+### 1. Mapeamento de Causa-Raiz e Receita Retida (`CASE WHEN` + `JSONB`)
 Utilizando `CASE WHEN` sobre os logs de erro (`ORA-02291`, `Gateway Timeout 504`, `Validation Error 400`) e extração direta da chave `valor` dentro da coluna `payload_json`, foi possível priorizar os incidentes pelo impacto financeiro:
 * **Cadastro de Cliente Ausente no ERP (FK):** principal fator de retenção de receita, exigindo sincronização cadastral antes do reprocessamento.
 * **Falha de Preenchimento no E-commerce (HTTP 400):** pedido enviado com `cpf` vazio no JSON, corrigido via saneamento controlado antes do reenvio.
 * **Instabilidade / Lentidão de API (HTTP 504):** pedidos com múltiplas tentativas falhas exigindo monitoramento de fila.
 
-![Diagnóstico de Causa-Raiz e Receita Retida](prints/01_causa_raiz.png)
+![Agrupamento de Causa-Raiz e Receita Retida](prints/01_query-agrupamento-causa-raiz.png)
 
 ---
 
-### 2. Gargalos na Fila e Visão por Loja
-Consultas focadas em SLA (pedidos parados há mais de 30 minutos) e distribuição de falhas por filial para atuação proativa do suporte junto às lojas de Recife, Jaboatão, Caruaru, João Pessoa e Maceió.
+### 2. Saneamento Manual de Payload (`UPDATE` no CPF antes do reenvio)
+Após identificar o erro de validação no pedido `IMP-9044` (campo `cpf` vazio no JSON), foi executado um saneamento controlado no registro para deixá-lo apto ao reprocessamento seguro no ERP Sankhya.
 
-![Gargalos e Visão por Loja](prints/02_gargalos_lojas.png)
+![Correção Manual de CPF no Payload](prints/02_query-correcao-manual-cpf.png)
+
+---
+
+### 3. Diagnóstico de Gargalos na Fila (> 30 minutos)
+Consulta focada em SLA para identificar pedidos parados na fila além do tempo esperado, priorizando a atuação do suporte antes de gerar reclamações nas lojas ou atraso na expedição.
+
+![Diagnóstico de Gargalos na Fila](prints/03_query-diagnostico-guargalos.png)
+
+---
+
+### 4. Pedidos com Maior Número de Tentativas Falhas
+Monitoramento de registros que acumulam múltiplas tentativas de envio sem sucesso, prevenindo loops de reprocessamento e sobrecarga na API de integração.
+
+![Pedidos com Mais Falhas](prints/04_query-pedidos-com-mais-falhas.png)
+
+---
+
+### 5. Volume de Ocorrências por Loja de Destino
+Distribuição das falhas e pendências por filial para atuação proativa do suporte junto às lojas físicas e alinhamento com as equipes locais.
+
+![Quantidade de Erros por Loja](prints/05_query-qtd-erros-loja.png)
 
 ---
 
@@ -63,7 +83,7 @@ Além da investigação no banco de dados, o projeto contempla a etapa de **comu
 
 ---
 
-**Autor:** Giannini Jefferson da Silva  
-www.linkedin.com/in/giannini-j-da-silva-56bb9a16b
-
+**Autor:** Giannini J. da Silva  
 *Graduando em Ciência de Dados | Suporte de Sistemas & Análise de Dados*
+🔗 [LinkedIn](https://www.linkedin.com/in/giannini-j-da-silva-56bb9a16b)
+
